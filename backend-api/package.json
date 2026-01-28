@@ -1,0 +1,47 @@
+{
+  "name": "backend-api",
+  "version": "1.0.0",
+  "description": "Backend server for managing frontend store and admin dashboard",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "node build/index.js",
+    "dev": "NODE_ENV=development nodemon --exec ts-node src/index.ts",
+    "prod": "NODE_ENV=production node build/index.js",
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:prod": "NODE_ENV=production prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saurav-tiwari03/saas-pulse-dashboard.git"
+  },
+  "author": "saurav-tiwari03",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/saurav-tiwari03/saas-pulse-dashboard/issues"
+  },
+  "homepage": "https://github.com/saurav-tiwari03/saas-pulse-dashboard#readme",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "pg": "^8.13.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.7",
+    "nodemon": "^3.1.11",
+    "prisma": "^7.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

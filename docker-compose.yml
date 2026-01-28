@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # ===================
+  # Databases
+  # ===================
+  
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: ecommerce_secret
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecommerce -d ecommerce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: ecommerce-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: analytics
+      MONGO_INITDB_ROOT_PASSWORD: analytics_secret
+      MONGO_INITDB_DATABASE: analytics_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================
+  # Message Broker
+  # ===================
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq_secret
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================
+  # Cache
+  # ===================
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================
+  # Applications (uncomment when ready)
+  # ===================
+
+  # backend-api:
+  #   build:
+  #     context: ./backend-api
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-backend-api
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://ecommerce:ecommerce_secret@postgres:5432/ecommerce_db
+  #     REDIS_URL: redis://redis:6379
+  #     JWT_SECRET: your-jwt-secret-change-in-production
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./backend-api:/app
+  #     - /app/node_modules
+
+  # analytics-service:
+  #   build:
+  #     context: ./analytics-service
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-analytics-service
+  #   restart: unless-stopped
+  #   environment:
+  #     RABBITMQ_URL: amqp://rabbitmq:rabbitmq_secret@rabbitmq:5672/
+  #     MONGODB_URI: mongodb://analytics:analytics_secret@mongodb:27017/analytics_db?authSource=admin
+  #     PORT: 8080
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     mongodb:
+  #       condition: service_healthy
+
+  # frontend-store:
+  #   build:
+  #     context: ./frontend-store
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-frontend-store
+  #   restart: unless-stopped
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:3000
+  #     NEXT_PUBLIC_ANALYTICS_URL: http://localhost:8080
+  #   ports:
+  #     - "3001:3000"
+  #   depends_on:
+  #     - backend-api
+  #   volumes:
+  #     - ./frontend-store:/app
+  #     - /app/node_modules
+  #     - /app/.next
+
+  # admin-panel:
+  #   build:
+  #     context: ./admin-panel
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-admin-panel
+  #   restart: unless-stopped
+  #   environment:
+  #     VITE_API_URL: http://localhost:3000
+  #   ports:
+  #     - "3002:5173"
+  #   volumes:
+  #     - ./admin-panel:/app
+  #     - /app/node_modules
+
+  # analytics-dashboard:
+  #   build:
+  #     context: ./analytics-dashboard
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-analytics-dashboard
+  #   restart: unless-stopped
+  #   environment:
+  #     VITE_API_URL: http://localhost:3000
+  #     VITE_ANALYTICS_URL: http://localhost:8080
+  #     VITE_WS_URL: ws://localhost:8080
+  #   ports:
+  #     - "3003:5173"
+  #   depends_on:
+  #     - analytics-service
+  #   volumes:
+  #     - ./analytics-dashboard:/app
+  #     - /app/node_modules
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  default:
+    name: ecommerce-network
