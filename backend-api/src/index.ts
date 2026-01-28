@@ -10,7 +10,7 @@ console.log(`📁 Loaded config from: ${envFile}`);
 import app from "./app";
 import PrismaService from "./services/databaseServices/db";
 
-const PORT = process.env.PORT || 5005;
+const PORT = process.env.PORT || 4000;
 
 async function main() {
   // Connect to database

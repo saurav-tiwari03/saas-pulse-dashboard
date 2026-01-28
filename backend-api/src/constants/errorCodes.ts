@@ -509,6 +509,98 @@ const Designation: Record<string, ErrorCode> = {
 };
 
 // ============================================
+// PRODUCT ERRORS (17xx)
+// ============================================
+const Product: Record<string, ErrorCode> = {
+  "E-1701": {
+    message: "Product not found!",
+    httpStatus: 404,
+  },
+  "E-1702": {
+    message: "Product with this SKU already exists!",
+    httpStatus: 400,
+  },
+  "E-1703": {
+    message: "Cannot update product!",
+    httpStatus: 400,
+  },
+  "E-1704": {
+    message: "Insufficient stock!",
+    httpStatus: 400,
+  },
+  "E-1705": {
+    message: "Invalid product data!",
+    httpStatus: 400,
+  },
+};
+
+// ============================================
+// CATEGORY ERRORS (18xx)
+// ============================================
+const CategoryErrors: Record<string, ErrorCode> = {
+  "E-1801": {
+    message: "Category not found!",
+    httpStatus: 404,
+  },
+  "E-1802": {
+    message: "Category with this name already exists!",
+    httpStatus: 400,
+  },
+  "E-1803": {
+    message: "Cannot delete category with products!",
+    httpStatus: 400,
+  },
+};
+
+// ============================================
+// CART ERRORS (19xx)
+// ============================================
+const Cart: Record<string, ErrorCode> = {
+  "E-1901": {
+    message: "Cart not found!",
+    httpStatus: 404,
+  },
+  "E-1902": {
+    message: "Cart item not found!",
+    httpStatus: 404,
+  },
+  "E-1903": {
+    message: "Cart is empty!",
+    httpStatus: 400,
+  },
+  "E-1904": {
+    message: "Invalid quantity!",
+    httpStatus: 400,
+  },
+};
+
+// ============================================
+// ORDER ERRORS (20xx)
+// ============================================
+const OrderErrors: Record<string, ErrorCode> = {
+  "E-2001": {
+    message: "Order not found!",
+    httpStatus: 404,
+  },
+  "E-2002": {
+    message: "Cannot cancel order!",
+    httpStatus: 400,
+  },
+  "E-2003": {
+    message: "Cannot update order status!",
+    httpStatus: 400,
+  },
+  "E-2004": {
+    message: "Address is required!",
+    httpStatus: 400,
+  },
+  "E-2005": {
+    message: "Address not found!",
+    httpStatus: 404,
+  },
+};
+
+// ============================================
 // GENERAL ERRORS (0xx)
 // ============================================
 const General: Record<string, ErrorCode> = {
@@ -599,6 +691,10 @@ const ErrorCodes: Record<string, ErrorCode> = {
   ...Payment,
   ...Policy,
   ...Designation,
+  ...Product,
+  ...CategoryErrors,
+  ...Cart,
+  ...OrderErrors,
   ...General,
 };
 

@@ -1,10 +1,11 @@
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { errorHandler } from "../utils/responseHandler";
+import { authService } from "../services/modelServices/auth.services";
 
 /**
  * Authentication middleware
- * Validates JWT token and attaches user to request
+ * Validates session token and attaches user to request
  */
 export const authenticate = async (
   req: AuthenticatedRequest,
@@ -26,13 +27,26 @@ export const authenticate = async (
       return;
     }
 
-    // TODO: Verify JWT token and extract user data
-    // Example with jsonwebtoken:
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
-    // req.user = decoded;
+    // Find session with valid token
+    const session = await authService.findByToken(token);
 
-    // After verification, attach user to request
-    // req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
+    if (!session || !session.user) {
+      errorHandler("E-003", res); // Invalid token
+      return;
+    }
+
+    // Check if user is active
+    if (!session.user.isActive) {
+      errorHandler("E-122", res); // User inactive
+      return;
+    }
+
+    // Attach user to request
+    req.user = {
+      id: session.user.id,
+      email: session.user.email,
+      role: session.user.role,
+    };
 
     next();
   } catch {
@@ -44,7 +58,11 @@ export const authenticate = async (
  * Role-based authorization middleware
  */
 export const authorize = (...allowedRoles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
     if (!req.user) {
       errorHandler("E-006", res); // Token missing
       return;
@@ -57,4 +75,39 @@ export const authorize = (...allowedRoles: string[]) => {
 
     next();
   };
+};
+
+/**
+ * Optional authentication middleware
+ * Does not fail if no token provided, but attaches user if valid token exists
+ */
+export const optionalAuth = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+
+      if (token) {
+        const session = await authService.findByToken(token);
+
+        if (session && session.user && session.user.isActive) {
+          req.user = {
+            id: session.user.id,
+            email: session.user.email,
+            role: session.user.role,
+          };
+        }
+      }
+    }
+
+    next();
+  } catch {
+    // Continue without authentication
+    next();
+  }
 };

@@ -15,7 +15,7 @@ A full-stack e-commerce platform with real-time analytics capabilities, built us
          ▼                       ▼                         ▼
 ┌─────────────────────────────────────────┐    ┌─────────────────────┐
 │              backend-api                │    │  analytics-service  │
-│           (Node.js) :5005               │    │     (Go) :8080      │
+│           (Node.js) :4000               │    │     (Go) :8080      │
 │  • Auth  • Products  • Orders  • Users  │    │  • Event Ingestion  │
 └──────────────┬──────────────────────────┘    │  • RabbitMQ Producer│
                │                               │  • Batch Processing │
@@ -135,8 +135,8 @@ npm run prisma:generate
 npm run prisma:migrate
 
 npm run dev
-# Runs on http://localhost:5005
-# API Docs: http://localhost:5005/api-docs
+# Runs on http://localhost:4000
+# API Docs: http://localhost:4000/api-docs
 ```
 
 **Terminal 2 - Analytics Service:**
@@ -180,7 +180,7 @@ npm run dev
 ### Backend API (`backend-api/.env`)
 ```env
 NODE_ENV=development
-PORT=5005
+PORT=4000
 
 # Database - PostgreSQL (Prisma)
 DATABASE_URL="postgresql://postgres:your-password@localhost:5432/your-database?schema=public"
@@ -204,13 +204,13 @@ MONGODB_URI=mongodb://analytics:analytics_secret@localhost:27017/analytics_db?au
 
 ### Frontend Store (`frontend-store/.env.local`)
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5005
+NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 NEXT_PUBLIC_ANALYTICS_URL=http://localhost:8080
 ```
 
 ### Admin Panel (`admin-panel/.env`)
 ```env
-VITE_API_URL=http://localhost:5005
+VITE_API_URL=http://localhost:4000/api/v1
 ```
 
 ### Analytics Dashboard (`analytics-dashboard/.env`)
@@ -291,7 +291,7 @@ mongosh "mongodb://analytics:analytics_secret@localhost:27017/analytics_db?authS
 ## API Documentation
 
 Once services are running:
-- **Backend API**: http://localhost:5005/api-docs (Swagger UI, no auth required in development)
+- **Backend API**: http://localhost:4000/api-docs (Swagger UI, no auth required in development)
 - **Analytics Service**: http://localhost:8080/docs
 
 ## Troubleshooting
