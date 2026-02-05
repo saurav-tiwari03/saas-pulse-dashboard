@@ -3,5 +3,5 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println("Analytics service code")
+	fmt.Println("Server is running")
 }
