@@ -1,21 +1,33 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
-func LoadEnv() string {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+type Config struct {
+	Port     string
+	MongoURI string
+	KafkaURL string
+}
+
+func Load() *Config {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system env")
 	}
 
-	PORT := os.Getenv("PORT")
-	fmt.Println("PORT:", PORT)
+	return &Config{
+		Port:     getEnv("PORT", "8080"),
+		MongoURI: getEnv("MONGO_URI", ""),
+		KafkaURL: getEnv("KAFKA_BROKERS", ""),
+	}
+}
 
-	return PORT
+func getEnv(key, fallback string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+	return fallback
 }

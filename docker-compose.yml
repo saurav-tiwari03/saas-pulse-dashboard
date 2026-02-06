@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   # ===================
   # Databases
   # ===================
-  
+
   postgres:
     image: postgres:16-alpine
     container_name: ecommerce-postgres
@@ -36,35 +34,60 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: >
+        mongosh --quiet localhost:27017/admin
+        --eval "db.runCommand('ping').ok"
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ===================
-  # Message Broker
+  # Kafka (KRaft Mode)
   # ===================
 
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    container_name: ecommerce-rabbitmq
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: ecommerce-kafka
     restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq
-      RABBITMQ_DEFAULT_PASS: rabbitmq_secret
     ports:
-      - "5672:5672"   # AMQP protocol
-      - "15672:15672" # Management UI
+      - "9092:9092"
+    environment:
+
+      # KRaft mode
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      # Controllers
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Storage
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+      # Cluster ID (required for KRaft)
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - kafka_data:/var/lib/kafka/data
+
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 5s
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-topics --bootstrap-server localhost:9092 --list"
+        ]
+      interval: 15s
+      timeout: 10s
       retries: 5
+      start_period: 40s
 
   # ===================
-  # Cache
+  # Redis
   # ===================
 
   redis:
@@ -82,104 +105,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # ===================
-  # Applications (uncomment when ready)
-  # ===================
-
-  # backend-api:
-  #   build:
-  #     context: ./backend-api
-  #     dockerfile: Dockerfile
-  #   container_name: ecommerce-backend-api
-  #   restart: unless-stopped
-  #   environment:
-  #     NODE_ENV: development
-  #     DATABASE_URL: postgresql://ecommerce:ecommerce_secret@postgres:5432/ecommerce_db
-  #     REDIS_URL: redis://redis:6379
-  #     JWT_SECRET: your-jwt-secret-change-in-production
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./backend-api:/app
-  #     - /app/node_modules
-
-  # analytics-service:
-  #   build:
-  #     context: ./analytics-service
-  #     dockerfile: Dockerfile
-  #   container_name: ecommerce-analytics-service
-  #   restart: unless-stopped
-  #   environment:
-  #     RABBITMQ_URL: amqp://rabbitmq:rabbitmq_secret@rabbitmq:5672/
-  #     MONGODB_URI: mongodb://analytics:analytics_secret@mongodb:27017/analytics_db?authSource=admin
-  #     PORT: 8080
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
-  #     mongodb:
-  #       condition: service_healthy
-
-  # frontend-store:
-  #   build:
-  #     context: ./frontend-store
-  #     dockerfile: Dockerfile
-  #   container_name: ecommerce-frontend-store
-  #   restart: unless-stopped
-  #   environment:
-  #     NEXT_PUBLIC_API_URL: http://localhost:3000
-  #     NEXT_PUBLIC_ANALYTICS_URL: http://localhost:8080
-  #   ports:
-  #     - "3001:3000"
-  #   depends_on:
-  #     - backend-api
-  #   volumes:
-  #     - ./frontend-store:/app
-  #     - /app/node_modules
-  #     - /app/.next
-
-  # admin-panel:
-  #   build:
-  #     context: ./admin-panel
-  #     dockerfile: Dockerfile
-  #   container_name: ecommerce-admin-panel
-  #   restart: unless-stopped
-  #   environment:
-  #     VITE_API_URL: http://localhost:3000
-  #   ports:
-  #     - "3002:5173"
-  #   volumes:
-  #     - ./admin-panel:/app
-  #     - /app/node_modules
-
-  # analytics-dashboard:
-  #   build:
-  #     context: ./analytics-dashboard
-  #     dockerfile: Dockerfile
-  #   container_name: ecommerce-analytics-dashboard
-  #   restart: unless-stopped
-  #   environment:
-  #     VITE_API_URL: http://localhost:3000
-  #     VITE_ANALYTICS_URL: http://localhost:8080
-  #     VITE_WS_URL: ws://localhost:8080
-  #   ports:
-  #     - "3003:5173"
-  #   depends_on:
-  #     - analytics-service
-  #   volumes:
-  #     - ./analytics-dashboard:/app
-  #     - /app/node_modules
-
 volumes:
   postgres_data:
   mongodb_data:
-  rabbitmq_data:
+  kafka_data:
   redis_data:
 
 networks:
