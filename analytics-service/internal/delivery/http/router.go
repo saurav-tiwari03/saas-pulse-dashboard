@@ -15,13 +15,18 @@ func SetupRouter(producer *kafka.Producer) *gin.Engine {
 	analyticsHandler := handlers.NewAnalyticsHandler(producer)
 
 	// API routes group
-	api := router.Group("/api")
+	api := router.Group("/api/v1")
 	{
 		// Events routes
 		events := api.Group("/events")
 		{
 			events.GET("/stats", analyticsHandler.GetStats)
 			events.POST("/event", analyticsHandler.AddEvent)
+		}
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", handlers.Login)
+			
 		}
 	}
 
