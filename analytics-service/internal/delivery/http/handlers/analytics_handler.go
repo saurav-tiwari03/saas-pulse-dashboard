@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/saurav-tiwari03/saas-pulse-dashboard/internal/infrastructure/kafka"
+	gin "github.com/gin-gonic/gin"
+	kafka "github.com/saurav-tiwari03/saas-pulse-dashboard/internal/infrastructure/kafka"
+	responseHandler "github.com/saurav-tiwari03/saas-pulse-dashboard/internal/utils"
 )
 
 // AnalyticsHandler handles analytics-related HTTP requests
@@ -37,30 +38,22 @@ func (h *AnalyticsHandler) GetStats(c *gin.Context) {
 			"loginCount":  0,
 		},
 	}
-
-	// Send JSON response (Gin auto-sets Content-Type)
-	c.JSON(http.StatusOK, response)
+	responseHandler.SendSuccess(c, response)
 }
 
 func (h *AnalyticsHandler) AddEvent(c *gin.Context) {
 	var body AddEventRequest
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		responseHandler.SendError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	err := h.producer.SendEvent(c.Request.Context(), body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		responseHandler.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{
+	responseHandler.SendSuccess(c, gin.H{
 		"success": true,
 		"message": "Event added successfully",
 		"data":    body,
